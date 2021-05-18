@@ -30,8 +30,6 @@ namespace TicTacToe.BLL.DTO
             }
         }
 
-        private 
-
         public GameDTO()
         {
             Movements = new List<MovementDTO>();

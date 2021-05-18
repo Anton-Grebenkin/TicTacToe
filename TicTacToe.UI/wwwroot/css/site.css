@@ -70,43 +70,36 @@ body {
   line-height: 60px; /* Vertically center the text there */
 }
 
-.board-container {
-    width: 320px;
-    height: 320px;
-    margin: auto;
-    margin-top: 100px;
-}
-
-    .board-container h1 {
-        text-align: center;
-        font-size: 50px;
-    }
-
-.board-row {
-    height: 100px;
-}
-
-.board-col {
-    height: 100px;
-    width: 100px;
-    float: left;
-    font-size: 100px;
+.ads {
     text-align: center;
-    line-height: 100px;
+    margin: .4vw 0;
+    background: #F4CC70;
+    padding: .4vw;
 }
 
-    .board-col:hover {
-        background-color: lightgray;
+.content {
+    margin: .4vw 0;
+    background: lightblue;
+    padding: .4vw;
+}
+
+.tic-panel {
+    border: solid 2px black;
+    margin: .4vw 0;
+    background: #66A5AD;
+    padding: .4vw;
+}
+
+.tic-box {
+    width: 2em;
+    height: 2em;
+    border: solid black 1px;
+    font-size: 5vw;
+    background: #6AB187;
+    text-align: center;
+    color: lavender;
+}
+
+    .tic-box:hover {
+        background: #20948B;
     }
-
-.board-border-b {
-    border-bottom: 10px solid black;
-}
-
-.board-border-r {
-    border-right: 10px solid black;
-}
-
-.winner {
-    color: blue;
-}
