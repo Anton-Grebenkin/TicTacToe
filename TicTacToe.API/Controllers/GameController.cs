@@ -12,7 +12,7 @@ using TicTacToe.BLL.Interfaces;
 
 namespace TicTacToe.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/game")]
     [ApiController]
     public class GameController : ControllerBase
     {
@@ -27,15 +27,6 @@ namespace TicTacToe.API.Controllers
 
             _mapConfig = new MapperConfiguration(mc => {
                 mc.CreateMap<GameDTO, GameResponseModel>().ForMember(g => g.WinNumbers, opt => opt.MapFrom(g => g.WinNumbers.Contains(null) ? null : g.WinNumbers));
-
-                //{
-                //    //string[] board = new string[9];
-                //    //foreach (var movement in g.Movements)
-                //    //{
-                //    //    board[movement.Position] = g.GamePlayers.Where(gp => gp.PlayerId == movement.PlayerId).First().Piece == Pieces.X ? "X" : "O";
-                //    //}
-                //    //return board;
-                //}));
             });
             _mapper = _mapConfig.CreateMapper();
         }
