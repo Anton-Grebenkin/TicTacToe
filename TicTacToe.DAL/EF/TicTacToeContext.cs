@@ -18,6 +18,7 @@ namespace TicTacToe.DAL.EF
         public TicTacToeContext(DbContextOptions<TicTacToeContext> options)
         : base(options)
         {
+            //Database.EnsureDeleted();
             Database.EnsureCreated();
         }
 

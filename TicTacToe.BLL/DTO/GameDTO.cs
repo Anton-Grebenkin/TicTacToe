@@ -8,11 +8,11 @@ namespace TicTacToe.BLL.DTO
 {
     public class GameDTO : BaseEntityDTO
     {
-        public Boolean IsComplited { get; set; }
+        public Boolean IsCompleted { get; set; }
         public Guid? WinnerId { get; set; }
         public ICollection<GamePlayerDTO> GamePlayers { get; set; }
         public ICollection<MovementDTO> Movements { get; set; }
-        public short[] WinNumbers { get; set; }
+        public short?[] WinNumbers { get; set; }
 
         private string[] _gameBoard;
         public string[] GameBoard 
@@ -21,10 +21,10 @@ namespace TicTacToe.BLL.DTO
             {
                foreach(var movement in Movements)
                 {
-                    if (GamePlayers.Where(gp => gp.PlayerId == movement.PlayerId).Any())
-                    {
+                    //if (GamePlayers.Where(gp => gp.PlayerId == movement.PlayerId).Any())
+                    //{
                         _gameBoard[movement.Position] = GamePlayers.Where(gp => gp.PlayerId == movement.PlayerId).First().Piece == Pieces.X ? "X" : "O";
-                    }   
+                    //}   
                 }
                 return _gameBoard;
             }
@@ -34,7 +34,7 @@ namespace TicTacToe.BLL.DTO
         {
             Movements = new List<MovementDTO>();
             GamePlayers = new List<GamePlayerDTO>();
-            WinNumbers = new short[3];
+            WinNumbers = new short?[3];
             _gameBoard = new string[9];
         }
     }

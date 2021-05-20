@@ -18,7 +18,7 @@ namespace TicTacToe.BLL.GameUtils
             return false;
         }
 
-        public static Guid GetWinnerId(IEnumerable<MovementDTO> movements, out short[] winNumbers)
+        public static Guid GetWinnerId(IEnumerable<MovementDTO> movements, out short?[] winNumbers)
         {
             foreach (var playerId in movements.Select(m => m.PlayerId).Distinct())
             {
@@ -27,27 +27,27 @@ namespace TicTacToe.BLL.GameUtils
                 {
                     if (playerMoves.Contains(i) && playerMoves.Contains((short)(i + 3)) && playerMoves.Contains((short)(i + 6)))
                     {
-                        winNumbers = new short[3] {i, (short)(i+3), (short)(i+6) };
+                        winNumbers = new short?[3] {i, (short)(i+3), (short)(i+6) };
                         return playerId;
                     }
                     if (playerMoves.Contains(j) && playerMoves.Contains((short)(j + 1)) && playerMoves.Contains((short)(j + 2)))
                     {
-                        winNumbers = new short[3] { j, (short)(j + 1), (short)(j + 2) };
+                        winNumbers = new short?[3] { j, (short)(j + 1), (short)(j + 2) };
                         return playerId;
                     }
                 }
                 if (playerMoves.Contains((short)0) && playerMoves.Contains((short)4) && playerMoves.Contains((short)8))
                 {
-                    winNumbers = new short[3] { 0, 4, 8 };
+                    winNumbers = new short?[3] { 0, 4, 8 };
                     return playerId;
                 }
                 if (playerMoves.Contains((short)2) && playerMoves.Contains((short)4) && playerMoves.Contains((short)6))
                 {
-                    winNumbers = new short[3] { 2, 4, 6 };
+                    winNumbers = new short?[3] { 2, 4, 6 };
                     return playerId;
                 }
             }
-            winNumbers = new short[3];
+            winNumbers = new short?[3];
             return Guid.Empty;
         }
 
@@ -76,7 +76,7 @@ namespace TicTacToe.BLL.GameUtils
                 return false;
             }
 
-            var movementsList = movements.ToList();
+            var movementsList = movements.OrderBy(m => m.Number).ToList();
             for (int i = 1; i < movementsList.Count(); i++)
             {
                 if (movementsList[i].PlayerId == movementsList[i - 1].PlayerId)

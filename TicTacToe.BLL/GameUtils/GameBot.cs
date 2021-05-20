@@ -83,7 +83,7 @@ namespace TicTacToe.BLL.GameUtils
         private int MiniMax(IEnumerable<MovementDTO> movements, int depth, bool isMax)
         {
             var movementsList = movements.ToList();
-            var winnerId = Game.GetWinnerId(movements, out short[] winNumbers);
+            var winnerId = Game.GetWinnerId(movements, out short?[] winNumbers);
             var xPlayerId = movementsList[0].PlayerId;
             var oPlayerId = Guid.Empty;
             if (movementsList.Count() > 1)
@@ -113,7 +113,7 @@ namespace TicTacToe.BLL.GameUtils
                 return 0;
             }
 
-            // If this maximizer's move
+          
             if (isMax)
             {
                 int best = -1000;
@@ -136,12 +136,12 @@ namespace TicTacToe.BLL.GameUtils
                 return best;
             }
 
-            // If this minimizer's move
+            
             else
             {
                 int best = 1000;
 
-                // Traverse all cells
+                
                 for (short i = 0; i < 9; i++)
                 {
                     if (!movementsList.Where(m => m.Position == i).Any())

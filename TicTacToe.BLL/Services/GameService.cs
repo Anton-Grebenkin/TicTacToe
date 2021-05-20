@@ -48,26 +48,33 @@ namespace TicTacToe.BLL.Services
         {
             using (var transaction = _dbContext.Database.BeginTransaction())
             {
-                var player = _dbContext.Players
-                   .AsQueryable()
-                   .Include(p => p.PlayerGames.Where(pg => pg.GameId == gameId))
-                   .ThenInclude(pg => pg.Game)
-                   .Where(p => p.Id == playerId)
-                   .FirstOrDefault();
+                var player = _dbContext.Players.Find(playerId);
+                   //.AsQueryable()
+                   //.Include(p => p.PlayerGames.Where(pg => pg.GameId == gameId))
+                   //.ThenInclude(pg => pg.Game)
+                   //.ThenInclude(g => g.Movements)
+                   //.Where(p => p.Id == playerId)
+                   //.FirstOrDefault();
 
                 if (player == null)
                 {
                     transaction.Rollback();
                     throw new NotFoundException("Player");
                 }
-                if (!player.PlayerGames.Any())
+                var game = _dbContext.Games
+                    .AsQueryable()
+                    .Include(g => g.GamePlayers)
+                    .Include(g => g.Movements)
+                    .Where(g => g.Id == gameId && g.GamePlayers.Where(gp => gp.PlayerId == playerId).Any())
+                    .FirstOrDefault();
+
+                if (game == null)
                 {
                     transaction.Rollback();
                     throw new NotFoundException("Game");
                 }
 
-                var game = player.PlayerGames.Where(pg => pg.GameId == gameId).FirstOrDefault().Game;
-                if (game.IsComplited)
+                if (game.IsCompleted)
                 {
                     transaction.Rollback();
                     throw new GameException("The game is already over.");
@@ -90,14 +97,14 @@ namespace TicTacToe.BLL.Services
                     throw new GameException(message);
                 }
                 _dbContext.Movements.Add(_mapper.Map<MovementDTO, Movement>(playerMovement));
-                var winnerId = BLL.GameUtils.Game.GetWinnerId(gameDto.Movements, out short[] winNumbers );
+                var winnerId = BLL.GameUtils.Game.GetWinnerId(gameDto.Movements, out short?[] winNumbers );
                 if (winnerId != Guid.Empty)
                 {
                     gameDto.WinnerId = winnerId;
                     gameDto.WinNumbers = winNumbers;
                 }
-                gameDto.IsComplited = winnerId != Guid.Empty || !GameUtils.Game.MovementsIsLeft(gameDto.Movements);
-                if (!gameDto.IsComplited)
+                gameDto.IsCompleted = winnerId != Guid.Empty || !GameUtils.Game.MovementsIsLeft(gameDto.Movements);
+                if (!gameDto.IsCompleted)
                 {
                     var botMovement = _gameBot.MakeMove(gameDto.Movements);
                     botMovement.GameId = gameDto.Id;
@@ -116,10 +123,10 @@ namespace TicTacToe.BLL.Services
                         gameDto.WinnerId = winnerId;
                         gameDto.WinNumbers = winNumbers;
                     }
-                    gameDto.IsComplited = winnerId != Guid.Empty || !GameUtils.Game.MovementsIsLeft(gameDto.Movements);
+                    gameDto.IsCompleted = winnerId != Guid.Empty || !GameUtils.Game.MovementsIsLeft(gameDto.Movements);
                 }
 
-                game.IsComplited = gameDto.IsComplited;
+                game.IsCompleted = gameDto.IsCompleted;
                 game.WinnerId = gameDto.WinnerId;
                 _dbContext.Games.Update(game);
                 _dbContext.SaveChanges();
@@ -133,107 +140,78 @@ namespace TicTacToe.BLL.Services
         {
             using (var transaction = _dbContext.Database.BeginTransaction())
             {
-                var player = _dbContext.Players
-                    .AsQueryable()
-                    .Include(p => p.PlayerGames)
-                    .ThenInclude(pg => pg.Game)
-                    .Where(p => p.Id == playerId)
-                    .FirstOrDefault();
-
-                if (player == null)
+                if (!_dbContext.Players.AsQueryable().Where(p => p.Id == playerId).Any())
                 {
                     transaction.Rollback();
                     throw new NotFoundException("Player");
                 }
 
+                //TODO перенести создание бота
                 if(!_dbContext.Players.AsQueryable().Where(p => p.Id == _gameBot.Id).Any())
                 {
                     _dbContext.Players.Add(new Player { Id = _gameBot.Id, Name = _gameBot.Name, CreateTime = DateTime.UtcNow  });
                     _dbContext.SaveChanges();
                 }
 
-                var playerGames = player.PlayerGames.OrderBy(pg => pg.CreateTime).Take(2).ToList();
+                var playerGames = _dbContext.Games
+                    .AsQueryable()
+                    .Include(g => g.GamePlayers)
+                    .Where(g => g.GamePlayers.Where(gp => gp.PlayerId == playerId).Any())
+                    .OrderByDescending(g => g.CreateTime)
+                    .Take(2)
+                    .ToList();
+
+                var game = new GameDTO();
+                var gamePlayer = new GamePlayerDTO();
+                var gameBot = new GamePlayerDTO();
+
+                gamePlayer.PlayerId = playerId;
+                gamePlayer.GameId = game.Id;
+
+                gameBot.PlayerId = _gameBot.Id;
+                gameBot.GameId = game.Id;
+
                 if (playerGames.Count() > 0)
                 {
                     var lastGame = playerGames[0];
-                    if (!lastGame.Game.IsComplited)
+                    if (!lastGame.IsCompleted)
                     {
-                        _dbContext.Games.Remove(lastGame.Game);
-                        if (player.PlayerGames.Count() > 1)
+                        _dbContext.Games.Remove(lastGame);
+                        if (playerGames.Count() > 1)
                         {
                             lastGame = playerGames[1];
                         }
                     }
 
-                    Enum.TryParse(lastGame.Piece, out Pieces lastPiece);
+                    var piece = lastGame.GamePlayers.Where(gp => gp.PlayerId == playerId).First().Piece;
+                    Enum.TryParse(piece, out Pieces lastPiece);
+
                     if (lastPiece == Pieces.X)
                     {
-                        var game = new GameDTO();
-                        var gamePlayer = new GamePlayerDTO();
-                        var gameBot = new GamePlayerDTO();
-
-                        gamePlayer.PlayerId = playerId;
-                        gamePlayer.GameId = game.Id;
                         gamePlayer.Piece = Pieces.O;
-                        game.GamePlayers.Add(gamePlayer);
-
-                        gameBot.PlayerId = _gameBot.Id;
-                        gameBot.GameId = game.Id;
                         gameBot.Piece = Pieces.X;
-                        game.GamePlayers.Add(gameBot);
-
                         var movement = _gameBot.MakeMove(game.Movements);
                         game.Movements.Add(_gameBot.MakeMove(game.Movements));
-
-                        _dbContext.Games.Add(_mapper.Map<GameDTO, DAL.Entities.Game>(game));
-                        _dbContext.SaveChanges();
-                        transaction.Commit();
-                        return game;
                     }
                     else
                     {
-                        var game = new GameDTO();
-                        var gamePlayer = new GamePlayerDTO();
-                        var gameBot = new GamePlayerDTO();
-
-                        gamePlayer.PlayerId = playerId;
-                        gamePlayer.GameId = game.Id;
                         gamePlayer.Piece = Pieces.X;
-                        game.GamePlayers.Add(gamePlayer);
-
-                        gameBot.PlayerId = _gameBot.Id;
-                        gameBot.GameId = game.Id;
                         gameBot.Piece = Pieces.O;
-                        game.GamePlayers.Add(gameBot);
-
-                        _dbContext.Games.Add(_mapper.Map<GameDTO, DAL.Entities.Game>(game));
-                        _dbContext.SaveChanges();
-                        transaction.Commit();
-                        return game;
                     }
                 }
                 else
-                {
-                    var game = new GameDTO();
-                    var gamePlayer = new GamePlayerDTO();
-                    var gameBot = new GamePlayerDTO();
-
-                    gamePlayer.PlayerId = playerId;
-                    gamePlayer.GameId = game.Id;
+                {                
                     gamePlayer.Piece = Pieces.X;
-                    game.GamePlayers.Add(gamePlayer);
-
-                    gameBot.PlayerId = _gameBot.Id;
-                    gameBot.GameId = game.Id;
                     gameBot.Piece = Pieces.O;
-                    game.GamePlayers.Add(gameBot);
-
-                    _dbContext.Games.Add(_mapper.Map<GameDTO, DAL.Entities.Game>(game));
-                    _dbContext.SaveChanges();
-                    transaction.Commit();
-                    return game;
+                  
                 }
-            
+
+                game.GamePlayers.Add(gamePlayer);
+                game.GamePlayers.Add(gameBot);
+                _dbContext.Games.Add(_mapper.Map<GameDTO, DAL.Entities.Game>(game));
+                _dbContext.SaveChanges();
+                transaction.Commit();
+                return game;
             }
         }
     }

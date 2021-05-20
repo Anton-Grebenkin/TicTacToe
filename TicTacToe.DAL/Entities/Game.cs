@@ -8,7 +8,7 @@ namespace TicTacToe.DAL.Entities
 {
     public class Game : BaseEntity
     {
-        public Boolean IsComplited { get; set; }
+        public Boolean IsCompleted { get; set; }
         public Guid? WinnerId { get; set; }
         public Player Winner { get; set; }
         public ICollection<GamePlayer> GamePlayers { get; set; }

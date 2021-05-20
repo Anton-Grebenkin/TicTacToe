@@ -24,15 +24,15 @@ namespace test
 
             var player = playerService.GetPlayerInfo();
 
-            var game = gameService.StartGame(player.Id);
+            //var game = gameService.StartGame(player.Id);
 
-            game = gameService.MakeMove(player.Id, game.Id, 4);
-            game = gameService.MakeMove(player.Id, game.Id, 1);
-            game = gameService.MakeMove(player.Id, game.Id, 5);
-            game = gameService.MakeMove(player.Id, game.Id, 8);
+            //game = gameService.MakeMove(player.Id, game.Id, 4);
+            //game = gameService.MakeMove(player.Id, game.Id, 1);
+            //game = gameService.MakeMove(player.Id, game.Id, 5);
             //game = gameService.MakeMove(player.Id, game.Id, 8);
+            ////game = gameService.MakeMove(player.Id, game.Id, 8);
 
-            game = gameService.MakeMove(player.Id, game.Id, 0);
+            //game = gameService.MakeMove(player.Id, game.Id, 0);
 
         }
     }
