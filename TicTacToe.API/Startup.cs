@@ -30,7 +30,19 @@ namespace TicTacToe.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:46816/")
+                                        .AllowAnyHeader()
+                                        .AllowAnyMethod()
+                                        .SetIsOriginAllowed((host) => true)
+                                        .AllowCredentials();
+                    });
+            });
+          
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -56,6 +68,8 @@ namespace TicTacToe.API
             }
 
             app.UseRouting();
+
+            app.UseCors();
 
             app.UseAuthorization();
 

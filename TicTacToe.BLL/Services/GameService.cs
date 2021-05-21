@@ -35,7 +35,7 @@ namespace TicTacToe.BLL.Services
             _gameBot = gameBot;
 
             _mapConfig = new MapperConfiguration(mc => {
-                mc.CreateMap<DAL.Entities.Game, GameDTO>().ReverseMap();
+                mc.CreateMap<Game, GameDTO>().ReverseMap();
                 mc.CreateMap<Player, PlayerDTO>().ReverseMap();
                 mc.CreateMap<Movement, MovementDTO>().ReverseMap();
                 mc.CreateMap<GamePlayer, GamePlayerDTO>().ForMember(gp => gp.Piece, opt => opt.MapFrom(gp => gp.Piece == "X" ? Pieces.X : Pieces.O));
@@ -48,32 +48,23 @@ namespace TicTacToe.BLL.Services
         {
             using (var transaction = _dbContext.Database.BeginTransaction())
             {
-                var player = _dbContext.Players.Find(playerId);
-                   //.AsQueryable()
-                   //.Include(p => p.PlayerGames.Where(pg => pg.GameId == gameId))
-                   //.ThenInclude(pg => pg.Game)
-                   //.ThenInclude(g => g.Movements)
-                   //.Where(p => p.Id == playerId)
-                   //.FirstOrDefault();
-
-                if (player == null)
+                if (!_dbContext.Players.AsQueryable().Where(p => p.Id == playerId).Any())
                 {
                     transaction.Rollback();
                     throw new NotFoundException("Player");
                 }
+
                 var game = _dbContext.Games
                     .AsQueryable()
                     .Include(g => g.GamePlayers)
                     .Include(g => g.Movements)
                     .Where(g => g.Id == gameId && g.GamePlayers.Where(gp => gp.PlayerId == playerId).Any())
                     .FirstOrDefault();
-
                 if (game == null)
                 {
                     transaction.Rollback();
                     throw new NotFoundException("Game");
                 }
-
                 if (game.IsCompleted)
                 {
                     transaction.Rollback();
@@ -81,7 +72,6 @@ namespace TicTacToe.BLL.Services
                 }
 
                 var gameDto = _mapper.Map<DAL.Entities.Game, GameDTO>(game);
-
                 var playerMovement = new MovementDTO
                 {
                     PlayerId = playerId,
@@ -90,6 +80,7 @@ namespace TicTacToe.BLL.Services
                     Number = (short)game.Movements.Count()
                 };
                 gameDto.Movements.Add(playerMovement);
+
                 var gameIsValid = BLL.GameUtils.Game.GameIsValid(gameDto.Movements, out string message);
                 if (!gameIsValid)
                 {
@@ -97,12 +88,34 @@ namespace TicTacToe.BLL.Services
                     throw new GameException(message);
                 }
                 _dbContext.Movements.Add(_mapper.Map<MovementDTO, Movement>(playerMovement));
+
                 var winnerId = BLL.GameUtils.Game.GetWinnerId(gameDto.Movements, out short?[] winNumbers );
                 if (winnerId != Guid.Empty)
                 {
                     gameDto.WinnerId = winnerId;
                     gameDto.WinNumbers = winNumbers;
+
+                    var winner = _dbContext.Players.Find(playerId);
+                    winner.WinsCount += 1;
+                    winner.GamesCount += 1;
+                    _dbContext.Players.Update(winner);
+
+                    var loser = _dbContext.Players.Find(_gameBot.Id);
+                    loser.FailuresCount += 1;
+                    loser.GamesCount += 1;
+                    _dbContext.Players.Update(loser);
                 }
+                else if (!GameUtils.Game.MovementsIsLeft(gameDto.Movements))
+                {
+                    var gameBot = _dbContext.Players.Find(_gameBot.Id);
+                    gameBot.GamesCount += 1;
+                    _dbContext.Players.Update(gameBot);
+
+                    var player = _dbContext.Players.Find(playerId);
+                    player.GamesCount += 1;
+                    _dbContext.Players.Update(player);
+                }
+
                 gameDto.IsCompleted = winnerId != Guid.Empty || !GameUtils.Game.MovementsIsLeft(gameDto.Movements);
                 if (!gameDto.IsCompleted)
                 {
@@ -122,8 +135,30 @@ namespace TicTacToe.BLL.Services
                     {
                         gameDto.WinnerId = winnerId;
                         gameDto.WinNumbers = winNumbers;
+
+                        var winner = _dbContext.Players.Find(_gameBot.Id);
+                        winner.WinsCount += 1;
+                        winner.GamesCount += 1;
+                        _dbContext.Players.Update(winner);
+
+                        var loser = _dbContext.Players.Find(playerId);
+                        loser.FailuresCount += 1;
+                        loser.GamesCount += 1;
+                        _dbContext.Players.Update(loser);
+                    }
+                    else if (!GameUtils.Game.MovementsIsLeft(gameDto.Movements))
+                    {
+                        var gameBot = _dbContext.Players.Find(_gameBot.Id);
+                        gameBot.GamesCount += 1;
+                        _dbContext.Players.Update(gameBot);
+
+                        var player = _dbContext.Players.Find(playerId);
+                        player.GamesCount += 1;
+                        _dbContext.Players.Update(player);
                     }
                     gameDto.IsCompleted = winnerId != Guid.Empty || !GameUtils.Game.MovementsIsLeft(gameDto.Movements);
+
+                    
                 }
 
                 game.IsCompleted = gameDto.IsCompleted;
@@ -146,7 +181,6 @@ namespace TicTacToe.BLL.Services
                     throw new NotFoundException("Player");
                 }
 
-                //TODO перенести создание бота
                 if(!_dbContext.Players.AsQueryable().Where(p => p.Id == _gameBot.Id).Any())
                 {
                     _dbContext.Players.Add(new Player { Id = _gameBot.Id, Name = _gameBot.Name, CreateTime = DateTime.UtcNow  });
