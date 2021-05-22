@@ -105,7 +105,7 @@ body {
     transition: background 0.2s ease-in-out;
 }
 
-    .block:hover {
-        cursor: pointer;
-        background: #0ff30f;
-    }
+.block-empty:hover {
+    cursor: pointer;
+    background: #e6eaf0;
+}

@@ -1,24 +1,36 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
-<div class="play-area">
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
-    <div class="block"></div>
+<div class="play-area mb-4">
+    <div id="piece-0" class="block"></div>
+    <div id="piece-1" class="block"></div>
+    <div id="piece-2" class="block"></div>
+    <div id="piece-3" class="block"></div>
+    <div id="piece-4" class="block"></div>
+    <div id="piece-5" class="block"></div>
+    <div id="piece-6" class="block"></div>
+    <div id="piece-7" class="block"></div>
+    <div id="piece-8" class="block"></div>
 </div>
-<button class="btn" id="test">test</button>
+<div class="row mb-4">
+    <div class="col-6"><button class="btn btn-primary btn-lg" id="resetGame">Reset</button></div>
+    <div class="col-6 text-right"><span id="playerPiece" class="font-weight-bold h2"></span></div>
+</div>
+<div class="row">
+    <div class="col-6"><span class="font-weight-bold">Games:</span></div>
+    <div class="col-6 text-right"><span id="gamesCount"class="font-weight-bold"></span></div>
+</div>
+<div class="row">
+    <div class="col-6"><span class="font-weight-bold">Wins:</span></div>
+    <div class="col-6 text-right"><span id="winsCount"class="font-weight-bold"></span></div>
+</div>
+<div class="row">
+    <div class="col-6"><span class="font-weight-bold">Failures:</span></div>
+    <div class="col-6 text-right"><span id="failuresCount"class="font-weight-bold"></span></div>
+</div>
 @section Scripts
 {
     <script src="~/lib/TicTacToe.js"></script>
-    <script>
-       
-    </script>
 }
 
 
